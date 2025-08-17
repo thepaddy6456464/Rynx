@@ -117,7 +117,7 @@ Section:CreateToggle({
                 function(obj) return obj:IsA("Model") and obj.Name == "Door" end,
                 -- Name function: gets the door number and state (Opened/Locked)
                 function(obj)
-                    local doorNumber = obj:GetAttribute("DoorNumber") or "Unknown"
+                    local doorNumber = tonumber(obj.Name:match("%d+")) or "Unknown"
                     local opened = obj:GetAttribute("Opened")
                     local locked = obj:GetAttribute("RequiresKey")
                     local doorState = if opened then "[Opened]" elseif locked then "[Locked]" else ""
