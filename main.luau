@@ -1,182 +1,141 @@
--- Rayfield UI library setupeeeeee
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-local Workspace = game:GetService("Workspace")
+-- 3333
 
--- Create the main window for the UI
-local Window = Rayfield:CreateWindow({
+local win = Rayfield:CreateWindow({
     Name = "Rynx - Doors",
-    LoadingTitle = "Rynx Doors",
-    LoadingSubtitle = "Made by Pulse",
-    ConfigurationSaving = {Enabled = true, FolderName = "RynxDoors", FileName = "Config"},
+    LoadingTitle = "Rynx - Doors",
+    LoadingSubtitle = "by Pulse",
+    ConfigurationSaving = {Enabled = true, FolderName = "RynxDoorsHub", FileName = "RynxDoorsConfig"},
+    Discord = {Enabled = true, Invite = "yourdiscordinvite", RememberJoins = true},
     KeySystem = false
 })
 
--- Create the main tab and section for the toggles
-local Tab = Window:CreateTab("Main", 4483362458)
-local Section = Tab:CreateSection("ESP Features")
+local tab = win:CreateTab("Main",4483362458)
+local sec = tab:CreateSection("ESP Features")
 
--- Tables to hold the ESP objects for each type
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
 local DoorESPs = {}
 local ItemESPs = {}
 local EntityESPs = {}
 
--- Table of important items to detect for Item ESP
-local ImportantItems = {
-    "Key", "Lever", "Flashlight", "Gold", "Battery", "Lockpick", "Bandage", 
-    "StarJug", "StarVial", "SkeletonKey", "Crucifix", "BreakerPole", "Fuse",
-    "Generator", "LibraryBook", "Anchor", "GateLever", "TimerLever", "MiscPickups"
-}
-
--- CreateESP function to handle both BillboardGui and Highlight
--- It returns both objects so they can be stored and cleaned up later.
+-- Function to add a BillboardGui label to objects
 local function CreateESP(parent, obj, name, color)
-    -- Ensure the object and its primary part exist before creating ESP
-    if not obj or not obj.PrimaryPart then
-        return nil, nil
-    end
+    local bg = Instance.new("BillboardGui")
+    bg.Name = "_ESP_BG"
+    bg.Adornee = obj
+    bg.AlwaysOnTop = true
+    bg.Size = UDim2.fromScale(2,1)
+    bg.Parent = parent
 
-    -- Create and set up the BillboardGui for the text label
-    local billboardGui = Instance.new("BillboardGui")
-    billboardGui.Name = "TextESP"
-    billboardGui.Adornee = obj.PrimaryPart
-    billboardGui.AlwaysOnTop = true
-    billboardGui.Size = UDim2.fromScale(2, 1)
-    billboardGui.Parent = parent
+    local txt = Instance.new("TextLabel")
+    txt.Size = UDim2.fromScale(1,1)
+    txt.BackgroundTransparency = 1
+    txt.Text = name
+    txt.Font = Enum.Font.SourceSansBold
+    txt.TextScaled = true
+    txt.TextColor3 = color
+    txt.Parent = bg
 
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.fromScale(1, 1)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = name
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.TextScaled = true
-    textLabel.TextColor3 = color
-    textLabel.Parent = billboardGui
-
-    -- Create and set up the Highlight object
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "VisualESP"
-    highlight.Adornee = obj.PrimaryPart
-    highlight.FillColor = color
-    highlight.OutlineTransparency = 0.7
-    highlight.Parent = parent
-
-    return billboardGui, highlight
+    return bg
 end
 
--- Function to remove and destroy all ESPs from a given table
-local function RemoveESPs(espTable)
-    for _, esp in ipairs(espTable) do
-        if esp and esp.Parent then
-            esp:Destroy()
+-- Function to add a glowing highlight
+local function CreateHighlight(obj, color)
+    local hl = Instance.new("Highlight")
+    hl.Adornee = obj
+    hl.FillColor = color
+    hl.OutlineTransparency = 0.7
+    hl.Parent = obj
+    return hl
+end
+
+-- Remove ESPs and highlights
+local function RemoveESP(tbl)
+    for _,esp in pairs(tbl) do
+        if esp and esp.Parent then esp:Destroy() end
+    end
+end
+
+-- Doors
+local function AddDoorESP()
+    RemoveESP(DoorESPs)
+    for _,door in pairs(Workspace:GetDescendants()) do
+        if door:IsA("Model") and door.Name == "Door" and door.PrimaryPart then
+            local doorNumber = door.Name:match("%d+") or "Unknown"
+            table.insert(DoorESPs, CreateESP(door, door.PrimaryPart, "Door " .. doorNumber, Color3.new(1,1,1)))
+            table.insert(DoorESPs, CreateHighlight(door.PrimaryPart, Color3.new(0,1,1))) -- Highlight door
         end
     end
-    -- Clear the table after destroying all objects
-    table.clear(espTable)
 end
 
--- Function to handle the initial creation and real-time updating of ESPs
-local function StartESP(espTable, filterFunc, nameFunc, color)
-    -- Remove any existing ESPs before creating new ones
-    RemoveESPs(espTable)
-    
-    -- Iterate through all existing objects in the workspace to create ESPs
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if filterFunc(obj) then
-            local billboard, highlight = CreateESP(obj, obj, nameFunc(obj), color)
-            if billboard and highlight then
-                table.insert(espTable, billboard)
-                table.insert(espTable, highlight)
+-- Items (keys, levers, flashlights, gold, etc.)
+local ImportantItems = {"Key","Lever","Flashlight","Gold","Battery"} -- Add more if needed
+local function AddItemESP()
+    RemoveESP(ItemESPs)
+    for _,item in pairs(Workspace:GetDescendants()) do
+        if (item:IsA("Tool") or (item:IsA("Model") and table.find(ImportantItems,item.Name))) and item.PrimaryPart then
+            table.insert(ItemESPs, CreateESP(item, item.PrimaryPart, item.Name, Color3.new(0,1,0)))
+            table.insert(ItemESPs, CreateHighlight(item.PrimaryPart, Color3.new(0,1,0))) -- Highlight items
+        end
+    end
+end
+
+-- Entities
+local function AddEntityESP()
+    RemoveESP(EntityESPs)
+    for _,en in pairs(Workspace:GetDescendants()) do
+        if en:IsA("Model") and en.Name=="Entity" and en.PrimaryPart then
+            table.insert(EntityESPs, CreateESP(en, en.PrimaryPart, "Entity", Color3.new(1,0,0)))
+            table.insert(EntityESPs, CreateHighlight(en.PrimaryPart, Color3.new(1,0,0))) -- Highlight entities
+        end
+    end
+end
+
+-- Door ESP toggle
+tab:CreateToggle({Name="Door ESP",CurrentValue=false,Flag="DoorESP",Callback=function(v)
+    if v then
+        AddDoorESP()
+        Workspace.DescendantAdded:Connect(function(c)
+            if c:IsA("Model") and c.Name=="Door" and c.PrimaryPart then
+                table.insert(DoorESPs, CreateESP(c,c.PrimaryPart,"Door",Color3.new(1,1,1)))
+                table.insert(DoorESPs, CreateHighlight(c.PrimaryPart, Color3.new(0,1,1)))
             end
-        end
-    end
+        end)
+    else RemoveESP(DoorESPs) end
+end})
 
-    -- Connect to DescendantAdded to handle new objects appearing in real-time
-    local connection = Workspace.DescendantAdded:Connect(function(descendant)
-        if filterFunc(descendant) then
-            local billboard, highlight = CreateESP(descendant, descendant, nameFunc(descendant), color)
-            if billboard and highlight then
-                table.insert(espTable, billboard)
-                table.insert(espTable, highlight)
+-- Item ESP toggle
+tab:CreateToggle({Name="Item ESP",CurrentValue=false,Flag="ItemESP",Callback=function(v)
+    if v then
+        AddItemESP()
+        Workspace.DescendantAdded:Connect(function(c)
+            if (c:IsA("Tool") or (c:IsA("Model") and table.find(ImportantItems,c.Name))) and c.PrimaryPart then
+                table.insert(ItemESPs, CreateESP(c,c.PrimaryPart,c.Name,Color3.new(0,1,0)))
+                table.insert(ItemESPs, CreateHighlight(c.PrimaryPart, Color3.new(0,1,0)))
             end
-        end
-    end)
-    
-    -- Store the connection so we can disconnect it later
-    table.insert(espTable, connection)
-end
+        end)
+    else RemoveESP(ItemESPs) end
+end})
 
--- Door ESP Toggle
-Section:CreateToggle({
-    Name = "Door ESP",
-    CurrentValue = false,
-    Flag = "DoorESP",
-    Callback = function(value)
-        if value then
-            StartESP(DoorESPs,
-                -- Filter function: checks if it's a model named "Door"
-                function(obj) return obj:IsA("Model") and obj.Name == "Door" end,
-                -- Name function: gets the door number and state (Opened/Locked)
-                function(obj)
-                    local doorNumber = tonumber(obj.Name:match("%d+")) or "Unknown"
-                    local opened = obj:GetAttribute("Opened")
-                    local locked = obj:GetAttribute("RequiresKey")
-                    local doorState = if opened then "[Opened]" elseif locked then "[Locked]" else ""
-                    return "Door " .. doorNumber .. " " .. doorState
-                end,
-                Color3.fromRGB(0, 255, 0) -- Green color
-            )
-        else
-            RemoveESPs(DoorESPs)
-        end
-    end
-})
+-- Entity ESP toggle
+tab:CreateToggle({Name="Entity Notifier",CurrentValue=false,Flag="EntityNotifier",Callback=function(v)
+    if v then
+        AddEntityESP()
+        Workspace.DescendantAdded:Connect(function(c)
+            if c:IsA("Model") and c.Name=="Entity" and c.PrimaryPart then
+                table.insert(EntityESPs, CreateESP(c,c.PrimaryPart,"Entity",Color3.new(1,0,0)))
+                table.insert(EntityESPs, CreateHighlight(c.PrimaryPart, Color3.new(1,0,0)))
+            end
+        end)
+    else RemoveESP(EntityESPs) end
+end})
 
--- Item ESP Toggle
-Section:CreateToggle({
-    Name = "Item ESP",
-    CurrentValue = false,
-    Flag = "ItemESP",
-    Callback = function(value)
-        if value then
-            StartESP(ItemESPs,
-                -- Filter function: checks if it's a model with an important item name
-                function(obj) return obj:IsA("Model") and table.find(ImportantItems, obj.Name) end,
-                -- Name function: returns the item's name
-                function(obj) return obj.Name end,
-                Color3.fromRGB(0, 255, 0) -- Green color
-            )
-        else
-            RemoveESPs(ItemESPs)
-        end
-    end
-})
-
--- Entity ESP Toggle
-Section:CreateToggle({
-    Name = "Entity ESP",
-    CurrentValue = false,
-    Flag = "EntityESP",
-    Callback = function(value)
-        if value then
-            StartESP(EntityESPs,
-                -- Filter function: checks if it's a model named "Entity"
-                function(obj) return obj:IsA("Model") and obj.Name == "Entity" end,
-                -- Name function: returns a generic name "Entity"
-                function(obj) return "Entity" end,
-                Color3.fromRGB(255, 0, 0) -- Red color
-            )
-        else
-            RemoveESPs(EntityESPs)
-        end
-    end
-})
-
--- Remove All ESP Button
-Section:CreateButton({
-    Name = "Remove All ESP",
-    Callback = function()
-        RemoveESPs(DoorESPs)
-        RemoveESPs(ItemESPs)
-        RemoveESPs(EntityESPs)
-    end
-})
+-- Remove all ESPs
+tab:CreateButton({Name="Remove All ESP",Callback=function()
+    RemoveESP(DoorESPs)
+    RemoveESP(ItemESPs)
+    RemoveESP(EntityESPs)
+end})
