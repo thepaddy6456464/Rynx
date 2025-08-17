@@ -8,6 +8,9 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
+-- Create tabs
+local MainTab = Window:CreateTab("Main")
+
 -- Toggle Variables
 local Toggles = {}
 
@@ -25,7 +28,7 @@ local ESPTable = {
     Entity = {}
 }
 
--- Function to create ESP (from LX Doors v3)
+-- Function to create ESP
 local function CreateESP(args)
     if not args.Object then return end
     local highlight = Instance.new("Highlight")
@@ -101,8 +104,8 @@ local function EntityESP(entity)
     })
 end
 
--- UI Toggles
-Toggles.DoorESP = Window:CreateToggle({
+-- Add toggles inside the Main tab
+Toggles.DoorESP = MainTab:CreateToggle({
     Name = "Door ESP",
     CurrentValue = false,
     Flag = "DoorESP",
@@ -120,7 +123,7 @@ Toggles.DoorESP = Window:CreateToggle({
     end
 })
 
-Toggles.ItemESP = Window:CreateToggle({
+Toggles.ItemESP = MainTab:CreateToggle({
     Name = "Item ESP",
     CurrentValue = false,
     Flag = "ItemESP",
@@ -138,7 +141,7 @@ Toggles.ItemESP = Window:CreateToggle({
     end
 })
 
-Toggles.EntityESP = Window:CreateToggle({
+Toggles.EntityESP = MainTab:CreateToggle({
     Name = "Entity ESP",
     CurrentValue = false,
     Flag = "EntityESP",
