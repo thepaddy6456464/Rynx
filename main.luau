@@ -1,4 +1,4 @@
--- Rayfield UI
+-- Rayfield UIeeee
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
     Name = "Rynx - Doors",
@@ -8,8 +8,8 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
--- Create tabs
-local MainTab = Window:CreateTab("Main")
+-- Create Main tab
+local MainTab = Window:CreateTab("Main") -- EVERYTHING must be inside this tab
 
 -- Toggle Variables
 local Toggles = {}
@@ -28,7 +28,7 @@ local ESPTable = {
     Entity = {}
 }
 
--- Function to create ESP
+-- Generic function to create highlight ESP
 local function CreateESP(args)
     if not args.Object then return end
     local highlight = Instance.new("Highlight")
@@ -36,6 +36,7 @@ local function CreateESP(args)
     highlight.FillColor = args.Color or Color3.new(0,1,0)
     highlight.OutlineColor = args.Color or Color3.new(0,1,0)
     highlight.Parent = args.Object
+
     -- Billboard text
     local bg = Instance.new("BillboardGui")
     bg.Adornee = args.Object.PrimaryPart or args.Object
@@ -50,15 +51,16 @@ local function CreateESP(args)
     txt.BackgroundTransparency = 1
     txt.Size = UDim2.fromScale(1,1)
     txt.Parent = bg
+
     table.insert(ESPTable[args.Type], highlight)
     table.insert(ESPTable[args.Type], bg)
 end
 
--- Door ESP Function
+-- Door ESP
 local function DoorESP(room)
     local door = room:FindFirstChild("Door")
     if door then
-        local doorNumber = tonumber(room.Name) + 1
+        local doorNumber = tonumber(room.Name) or 0
         local opened = room:GetAttribute("Opened")
         local locked = room:GetAttribute("RequiresKey")
         local doorState = if opened then "[Opened]" elseif locked then "[Locked]" else ""
@@ -71,7 +73,7 @@ local function DoorESP(room)
     end
 end
 
--- Item ESP Function
+-- Item ESP
 local ImportantItems = {"Key","Lever","Flashlight","Gold","Battery","ElectricalKey","TimerLever","Fuse"}
 local function ItemESP(item)
     if not item or not item.PrimaryPart then return end
@@ -92,19 +94,18 @@ local function ItemESP(item)
     })
 end
 
--- Entity ESP Function
+-- Entity ESP
 local function EntityESP(entity)
     if not entity or not entity.PrimaryPart then return end
-    local name = entity.Name
     CreateESP({
         Type = "Entity",
         Object = entity,
-        Text = name,
+        Text = entity.Name,
         Color = Options.EntityEspColor
     })
 end
 
--- Add toggles inside the Main tab
+-- Add toggles inside MainTab
 Toggles.DoorESP = MainTab:CreateToggle({
     Name = "Door ESP",
     CurrentValue = false,
