@@ -1,5 +1,5 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
--- 3333
+-- 3333f
 
 local win = Rayfield:CreateWindow({
     Name = "Rynx - Doors",
@@ -18,7 +18,7 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 local DoorESPs = {}
-local ItemESPs = {}
+local ItemESPs = {} -- Added from the other script
 local EntityESPs = {}
 
 -- Function to add a BillboardGui label to objects
@@ -71,7 +71,7 @@ local function AddDoorESP()
     end
 end
 
--- Items (keys, levers, flashlights, gold, etc.)
+-- Items (keys, levers, flashlights, gold, etc.) -- Added from the other script
 local ImportantItems = {"Key","Lever","Flashlight","Gold","Battery"} -- Add more if needed
 local function AddItemESP()
     RemoveESP(ItemESPs)
@@ -107,7 +107,7 @@ tab:CreateToggle({Name="Door ESP",CurrentValue=false,Flag="DoorESP",Callback=fun
     else RemoveESP(DoorESPs) end
 end})
 
--- Item ESP toggle
+-- Item ESP toggle -- Added from the other script
 tab:CreateToggle({Name="Item ESP",CurrentValue=false,Flag="ItemESP",Callback=function(v)
     if v then
         AddItemESP()
