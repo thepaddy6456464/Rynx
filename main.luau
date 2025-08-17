@@ -20,7 +20,7 @@ local DoorESPs = {}
 local ItemESPs = {}
 local EntityESPs = {}
 
--- Billboard ESP function
+-- Generic Billboard ESP
 local function CreateESP(parent, obj, name, color)
     local bg = Instance.new("BillboardGui")
     bg.Name = "_ESP_BG"
@@ -41,7 +41,7 @@ local function CreateESP(parent, obj, name, color)
     return bg
 end
 
--- Highlight function
+-- Generic Highlight
 local function CreateHighlight(obj, color)
     local hl = Instance.new("Highlight")
     hl.Adornee = obj
@@ -58,7 +58,7 @@ local function RemoveESP(tbl)
     end
 end
 
--- Doors
+-- Door ESP
 local function AddDoorESP()
     RemoveESP(DoorESPs)
     for _,door in pairs(Workspace:GetDescendants()) do
@@ -70,19 +70,41 @@ local function AddDoorESP()
     end
 end
 
--- Items (key, lever, flashlight, gold, battery)
+-- lord forgive me for skidding lolhax
 local ImportantItems = {"Key","Lever","Flashlight","Gold","Battery"}
 local function AddItemESP()
     RemoveESP(ItemESPs)
     for _,item in pairs(Workspace:GetDescendants()) do
         if (item:IsA("Tool") or (item:IsA("Model") and table.find(ImportantItems,item.Name))) and item.PrimaryPart then
-            table.insert(ItemESPs, CreateESP(item, item.PrimaryPart, item.Name, Color3.new(0,1,0)))
-            table.insert(ItemESPs, CreateHighlight(item.PrimaryPart, Color3.new(0,1,0)))
+            local bg = Instance.new("BillboardGui")
+            bg.Name = "_ItemESP"
+            bg.Adornee = item.PrimaryPart
+            bg.AlwaysOnTop = true
+            bg.Size = UDim2.fromScale(2,1)
+            bg.Parent = item.PrimaryPart
+
+            local txt = Instance.new("TextLabel")
+            txt.Size = UDim2.fromScale(1,1)
+            txt.BackgroundTransparency = 1
+            txt.Text = item.Name
+            txt.Font = Enum.Font.SourceSansBold
+            txt.TextScaled = true
+            txt.TextColor3 = Color3.new(0,1,0)
+            txt.Parent = bg
+            table.insert(ItemESPs, bg)
+
+            -- Highlight
+            local hl = Instance.new("Highlight")
+            hl.Adornee = item.PrimaryPart
+            hl.FillColor = Color3.new(0,1,0)
+            hl.OutlineTransparency = 0.7
+            hl.Parent = item.PrimaryPart
+            table.insert(ItemESPs, hl)
         end
     end
 end
 
--- Entities
+-- Entity ESP
 local function AddEntityESP()
     RemoveESP(EntityESPs)
     for _,en in pairs(Workspace:GetDescendants()) do
@@ -113,8 +135,29 @@ tab:CreateToggle({Name="Item ESP",CurrentValue=false,Flag="ItemESP",Callback=fun
         AddItemESP()
         Workspace.DescendantAdded:Connect(function(c)
             if (c:IsA("Tool") or (c:IsA("Model") and table.find(ImportantItems,c.Name))) and c.PrimaryPart then
-                table.insert(ItemESPs, CreateESP(c, c.PrimaryPart, c.Name, Color3.new(0,1,0)))
-                table.insert(ItemESPs, CreateHighlight(c.PrimaryPart, Color3.new(0,1,0)))
+                local bg = Instance.new("BillboardGui")
+                bg.Name = "_ItemESP"
+                bg.Adornee = c.PrimaryPart
+                bg.AlwaysOnTop = true
+                bg.Size = UDim2.fromScale(2,1)
+                bg.Parent = c.PrimaryPart
+
+                local txt = Instance.new("TextLabel")
+                txt.Size = UDim2.fromScale(1,1)
+                txt.BackgroundTransparency = 1
+                txt.Text = c.Name
+                txt.Font = Enum.Font.SourceSansBold
+                txt.TextScaled = true
+                txt.TextColor3 = Color3.new(0,1,0)
+                txt.Parent = bg
+                table.insert(ItemESPs, bg)
+
+                local hl = Instance.new("Highlight")
+                hl.Adornee = c.PrimaryPart
+                hl.FillColor = Color3.new(0,1,0)
+                hl.OutlineTransparency = 0.7
+                hl.Parent = c.PrimaryPart
+                table.insert(ItemESPs, hl)
             end
         end)
     else RemoveESP(ItemESPs) end
