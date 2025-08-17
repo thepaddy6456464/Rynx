@@ -1,184 +1,167 @@
+-- Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local win = Rayfield:CreateWindow({
+local Window = Rayfield:CreateWindow({
     Name = "Rynx - Doors",
-    LoadingTitle = "Rynx - Doors",
-    LoadingSubtitle = "by Pulse",
-    ConfigurationSaving = {Enabled = true, FolderName = "RynxDoorsHub", FileName = "RynxDoorsConfig"},
-    Discord = {Enabled = true, Invite = "DgtcPQuEvG", RememberJoins = true},
+    LoadingTitle = "Rynx Doors",
+    LoadingSubtitle = "Made by Pulse",
+    ConfigurationSaving = {Enabled = true, FolderName = "RynxDoors", FileName = "Config"},
     KeySystem = false
 })
 
-local tab = win:CreateTab("Main",4483362458)
-local sec = tab:CreateSection("ESP Features")
+-- Toggle Variables
+local Toggles = {}
 
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
+-- ESP Colors
+local Options = {
+    DoorEspColor = Color3.fromRGB(0,255,0),
+    ItemEspColor = Color3.fromRGB(0,255,0),
+    EntityEspColor = Color3.fromRGB(255,0,0)
+}
 
-local DoorESPs = {}
-local ItemESPs = {}
-local EntityESPs = {}
+-- Temporary tables to track ESP
+local ESPTable = {
+    Door = {},
+    Item = {},
+    Entity = {}
+}
 
--- Generic Billboard ESP
-local function CreateESP(parent, obj, name, color)
+-- Function to create ESP (from LX Doors v3)
+local function CreateESP(args)
+    if not args.Object then return end
+    local highlight = Instance.new("Highlight")
+    highlight.Adornee = args.Object.PrimaryPart or args.Object
+    highlight.FillColor = args.Color or Color3.new(0,1,0)
+    highlight.OutlineColor = args.Color or Color3.new(0,1,0)
+    highlight.Parent = args.Object
+    -- Billboard text
     local bg = Instance.new("BillboardGui")
-    bg.Name = "_ESP_BG"
-    bg.Adornee = obj
-    bg.AlwaysOnTop = true
+    bg.Adornee = args.Object.PrimaryPart or args.Object
     bg.Size = UDim2.fromScale(2,1)
-    bg.Parent = parent
-
+    bg.AlwaysOnTop = true
+    bg.Parent = args.Object
     local txt = Instance.new("TextLabel")
-    txt.Size = UDim2.fromScale(1,1)
-    txt.BackgroundTransparency = 1
-    txt.Text = name
+    txt.Text = args.Text or "ESP"
     txt.Font = Enum.Font.SourceSansBold
     txt.TextScaled = true
-    txt.TextColor3 = color
+    txt.TextColor3 = args.Color or Color3.new(0,1,0)
+    txt.BackgroundTransparency = 1
+    txt.Size = UDim2.fromScale(1,1)
     txt.Parent = bg
-
-    return bg
+    table.insert(ESPTable[args.Type], highlight)
+    table.insert(ESPTable[args.Type], bg)
 end
 
--- Generic Highlight
-local function CreateHighlight(obj, color)
-    local hl = Instance.new("Highlight")
-    hl.Adornee = obj
-    hl.FillColor = color
-    hl.OutlineTransparency = 0.7
-    hl.Parent = obj
-    return hl
-end
-
--- Remove ESPs
-local function RemoveESP(tbl)
-    for _,esp in pairs(tbl) do
-        if esp and esp.Parent then esp:Destroy() end
+-- Door ESP Function
+local function DoorESP(room)
+    local door = room:FindFirstChild("Door")
+    if door then
+        local doorNumber = tonumber(room.Name) + 1
+        local opened = room:GetAttribute("Opened")
+        local locked = room:GetAttribute("RequiresKey")
+        local doorState = if opened then "[Opened]" elseif locked then "[Locked]" else ""
+        CreateESP({
+            Type = "Door",
+            Object = door,
+            Text = "Door "..doorNumber.." "..doorState,
+            Color = Options.DoorEspColor
+        })
     end
 end
 
--- Door ESP
-local function AddDoorESP()
-    RemoveESP(DoorESPs)
-    for _,door in pairs(Workspace:GetDescendants()) do
-        if door:IsA("Model") and door.Name == "Door" and door.PrimaryPart then
-            local doorNumber = door.Name:match("%d+") or "Unknown"
-            table.insert(DoorESPs, CreateESP(door, door.PrimaryPart, "Door " .. doorNumber, Color3.new(1,1,1)))
-            table.insert(DoorESPs, CreateHighlight(door.PrimaryPart, Color3.new(0,1,1)))
+-- Item ESP Function
+local ImportantItems = {"Key","Lever","Flashlight","Gold","Battery","ElectricalKey","TimerLever","Fuse"}
+local function ItemESP(item)
+    if not item or not item.PrimaryPart then return end
+    if not table.find(ImportantItems, item.Name) then return end
+    local text = item.Name
+    if item.Name == "Gold" then
+        text = "Gold ["..(item:GetAttribute("GoldValue") or 0).."]"
+    elseif item.Name == "TimerLever" then
+        text = "Timer Lever [+ "..(item:FindFirstChild("TakeTimer") and item.TakeTimer.TextLabel.Text or "0").."]"
+    elseif item.Name == "ElectricalKey" then
+        text = "Electrical Key"
+    end
+    CreateESP({
+        Type = "Item",
+        Object = item,
+        Text = text,
+        Color = Options.ItemEspColor
+    })
+end
+
+-- Entity ESP Function
+local function EntityESP(entity)
+    if not entity or not entity.PrimaryPart then return end
+    local name = entity.Name
+    CreateESP({
+        Type = "Entity",
+        Object = entity,
+        Text = name,
+        Color = Options.EntityEspColor
+    })
+end
+
+-- UI Toggles
+Toggles.DoorESP = Window:CreateToggle({
+    Name = "Door ESP",
+    CurrentValue = false,
+    Flag = "DoorESP",
+    Callback = function(value)
+        for _,room in pairs(workspace:GetChildren()) do
+            if value then
+                DoorESP(room)
+            else
+                for _,esp in pairs(ESPTable.Door) do
+                    if esp then esp:Destroy() end
+                end
+                ESPTable.Door = {}
+            end
         end
     end
-end
+})
 
--- lord forgive me for skidding lolhax
-local ImportantItems = {"Key","Lever","Flashlight","Gold","Battery"}
-local function AddItemESP()
-    RemoveESP(ItemESPs)
-    for _,item in pairs(Workspace:GetDescendants()) do
-        if (item:IsA("Tool") or (item:IsA("Model") and table.find(ImportantItems,item.Name))) and item.PrimaryPart then
-            local bg = Instance.new("BillboardGui")
-            bg.Name = "_ItemESP"
-            bg.Adornee = item.PrimaryPart
-            bg.AlwaysOnTop = true
-            bg.Size = UDim2.fromScale(2,1)
-            bg.Parent = item.PrimaryPart
-
-            local txt = Instance.new("TextLabel")
-            txt.Size = UDim2.fromScale(1,1)
-            txt.BackgroundTransparency = 1
-            txt.Text = item.Name
-            txt.Font = Enum.Font.SourceSansBold
-            txt.TextScaled = true
-            txt.TextColor3 = Color3.new(0,1,0)
-            txt.Parent = bg
-            table.insert(ItemESPs, bg)
-
-            -- Highlight
-            local hl = Instance.new("Highlight")
-            hl.Adornee = item.PrimaryPart
-            hl.FillColor = Color3.new(0,1,0)
-            hl.OutlineTransparency = 0.7
-            hl.Parent = item.PrimaryPart
-            table.insert(ItemESPs, hl)
+Toggles.ItemESP = Window:CreateToggle({
+    Name = "Item ESP",
+    CurrentValue = false,
+    Flag = "ItemESP",
+    Callback = function(value)
+        for _,item in pairs(workspace:GetDescendants()) do
+            if value then
+                ItemESP(item)
+            else
+                for _,esp in pairs(ESPTable.Item) do
+                    if esp then esp:Destroy() end
+                end
+                ESPTable.Item = {}
+            end
         end
     end
-end
+})
 
--- Entity ESP
-local function AddEntityESP()
-    RemoveESP(EntityESPs)
-    for _,en in pairs(Workspace:GetDescendants()) do
-        if en:IsA("Model") and en.Name=="Entity" and en.PrimaryPart then
-            table.insert(EntityESPs, CreateESP(en, en.PrimaryPart, "Entity", Color3.new(1,0,0)))
-            table.insert(EntityESPs, CreateHighlight(en.PrimaryPart, Color3.new(1,0,0)))
+Toggles.EntityESP = Window:CreateToggle({
+    Name = "Entity ESP",
+    CurrentValue = false,
+    Flag = "EntityESP",
+    Callback = function(value)
+        for _,entity in pairs(workspace:GetDescendants()) do
+            if entity:IsA("Model") and value then
+                EntityESP(entity)
+            else
+                for _,esp in pairs(ESPTable.Entity) do
+                    if esp then esp:Destroy() end
+                end
+                ESPTable.Entity = {}
+            end
         end
     end
-end
+})
 
--- Door ESP toggle
-tab:CreateToggle({Name="Door ESP",CurrentValue=false,Flag="DoorESP",Callback=function(v)
-    if v then
-        AddDoorESP()
-        Workspace.DescendantAdded:Connect(function(c)
-            if c:IsA("Model") and c.Name=="Door" and c.PrimaryPart then
-                local doorNumber = c.Name:match("%d+") or "Unknown"
-                table.insert(DoorESPs, CreateESP(c, c.PrimaryPart, "Door " .. doorNumber, Color3.new(1,1,1)))
-                table.insert(DoorESPs, CreateHighlight(c.PrimaryPart, Color3.new(0,1,1)))
-            end
-        end)
-    else RemoveESP(DoorESPs) end
-end})
-
--- Item ESP toggle
-tab:CreateToggle({Name="Item ESP",CurrentValue=false,Flag="ItemESP",Callback=function(v)
-    if v then
-        AddItemESP()
-        Workspace.DescendantAdded:Connect(function(c)
-            if (c:IsA("Tool") or (c:IsA("Model") and table.find(ImportantItems,c.Name))) and c.PrimaryPart then
-                local bg = Instance.new("BillboardGui")
-                bg.Name = "_ItemESP"
-                bg.Adornee = c.PrimaryPart
-                bg.AlwaysOnTop = true
-                bg.Size = UDim2.fromScale(2,1)
-                bg.Parent = c.PrimaryPart
-
-                local txt = Instance.new("TextLabel")
-                txt.Size = UDim2.fromScale(1,1)
-                txt.BackgroundTransparency = 1
-                txt.Text = c.Name
-                txt.Font = Enum.Font.SourceSansBold
-                txt.TextScaled = true
-                txt.TextColor3 = Color3.new(0,1,0)
-                txt.Parent = bg
-                table.insert(ItemESPs, bg)
-
-                local hl = Instance.new("Highlight")
-                hl.Adornee = c.PrimaryPart
-                hl.FillColor = Color3.new(0,1,0)
-                hl.OutlineTransparency = 0.7
-                hl.Parent = c.PrimaryPart
-                table.insert(ItemESPs, hl)
-            end
-        end)
-    else RemoveESP(ItemESPs) end
-end})
-
--- Entity ESP toggle
-tab:CreateToggle({Name="Entity ESP",CurrentValue=false,Flag="EntityESP",Callback=function(v)
-    if v then
-        AddEntityESP()
-        Workspace.DescendantAdded:Connect(function(c)
-            if c:IsA("Model") and c.Name=="Entity" and c.PrimaryPart then
-                table.insert(EntityESPs, CreateESP(c, c.PrimaryPart, "Entity", Color3.new(1,0,0)))
-                table.insert(EntityESPs, CreateHighlight(c.PrimaryPart, Color3.new(1,0,0)))
-            end
-        end)
-    else RemoveESP(EntityESPs) end
-end})
-
--- Remove all ESPs
-tab:CreateButton({Name="Remove All ESP",Callback=function()
-    RemoveESP(DoorESPs)
-    RemoveESP(ItemESPs)
-    RemoveESP(EntityESPs)
-end})
+-- Auto update ESP for new items/entities
+workspace.DescendantAdded:Connect(function(desc)
+    if Toggles.ItemESP.CurrentValue and table.find(ImportantItems, desc.Name) then
+        ItemESP(desc)
+    end
+    if Toggles.EntityESP.CurrentValue and desc:IsA("Model") then
+        EntityESP(desc)
+    end
+end)
