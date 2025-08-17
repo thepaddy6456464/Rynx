@@ -5,7 +5,7 @@ local win = Rayfield:CreateWindow({
     LoadingTitle = "Rynx - Doors",
     LoadingSubtitle = "by Pulse",
     ConfigurationSaving = {Enabled = true, FolderName = "RynxDoorsHub", FileName = "RynxDoorsConfig"},
-    Discord = {Enabled = true, Invite = "yourdiscordinvite", RememberJoins = true},
+    Discord = {Enabled = true, Invite = "DgtcPQuEvG", RememberJoins = true},
     KeySystem = false
 })
 
